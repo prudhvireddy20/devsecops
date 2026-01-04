@@ -18,7 +18,9 @@ jobs:
       - name: Run Semgrep on src directory
         run: |
           semgrep scan src \
-            --config security/semgrep-rules \
+            --config security/semgrep-rules \  # Custom rules directory
+            --config auto \                    # Built-in Semgrep rules 
+            --config p/owasp-top-ten \         # OWASP Top Ten rules(Security Standard pack) and we can also other packs 
             --json > semgrep.json || true
 
       - name: Upload Semgrep report

@@ -1,0 +1,7 @@
+rules:
+  - id: python.no-os-system
+    patterns:
+      - pattern: os.system(...)
+    message: "Use of os.system() can lead to command injection"
+    severity: ERROR
+    languages: [python]

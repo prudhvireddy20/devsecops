@@ -1,0 +1,6 @@
+rules:
+  - id: python.insecure-eval
+    pattern: eval(...)
+    message: "Use of eval() is insecure"
+    severity: ERROR
+    languages: [python]

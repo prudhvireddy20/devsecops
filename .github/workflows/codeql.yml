@@ -1,0 +1,56 @@
+name: CodeQL SAST
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  analyze:
+    name: CodeQL Analyze
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ java, cpp, go, javascript, python ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 🔹 Initialize CodeQL with BOTH built-in + custom queries
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+          # Built-in + custom queries
+          queries: |
+            security-and-quality
+            ./security/codeql-queries
+
+          # Restrict analysis ONLY to src directory
+          paths: src
+
+      # 🔹 Autobuild (required for Java / C / C++)
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      # 🔹 Run analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: codeql-results
+          format: sarif
+
+      # 🔹 Upload SARIF for DefectDojo / MCP ingestion
+      - name: Upload CodeQL Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-${{ matrix.language }}-report
+          path: codeql-results/**/*.sarif

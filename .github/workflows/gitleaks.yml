@@ -1,41 +1,37 @@
-name: Gitleaks Secret Scan
+name: Gitleaks Custom Scan
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+  push:
+    branches: [main]
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
-  gitleaks:
-    name: Gitleaks (Last 10 Commits | src only)
+  scan:
+    name: Gitleaks Security Scan
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 11   # required for last 10 commits
+          fetch-depth: 0 # Ensures git history is available for --log-opts
 
-      - name: Install Gitleaks CLI
-        run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_arm64.tar.gz
-          sudo mv gitleaks /usr/local/bin/gitleaks
-          gitleaks version
-
-      - name: Run Gitleaks (src directory only)
-        run: |
-          gitleaks detect \
-            --source ./src \
-            --config ./security/gitleaks-rules/gitleaks.toml \
-            --log-opts="--max-count=10" \
-            --report-format json \
-            --report-path gitleaks-report.json \
+      - name: Run Gitleaks CLI
+        # We use the official Docker image to execute your specific command
+        uses: docker://zricethezav/gitleaks:latest
+        with:
+          args: >-
+            detect
+            --source=./src
+            --config=./security/gitleaks-rules/gitleaks.toml
+            --log-opts="--max-count=10"
+            --report-format=json
+            --report-path=gitleaks-report.json
             --verbose
 
-      - name: Upload Gitleaks Report
-        if: always()
+      - name: Upload Report
+        # This keeps the report.json available in the GitHub Actions UI
+        if: always() # Run even if secrets are found (which usually fails the step)
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report

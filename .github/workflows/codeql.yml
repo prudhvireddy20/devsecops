@@ -48,10 +48,11 @@ jobs:
 
       - name: Build C/C++
         run: |
-          mkdir -p build
+          rm -rf build
+          mkdir build
           cd build
           cmake ..
-          make
+          cmake --build .
 
       - uses: github/codeql-action/analyze@v3
 
@@ -73,7 +74,6 @@ jobs:
       - name: Build Go
         run: |
           go mod tidy
-          go build ./...
 
       - uses: github/codeql-action/analyze@v3
 

@@ -1,39 +1,52 @@
-name: OSV-Scanner
+name: OSV Dependency Vulnerability Scan
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
+  workflow_dispatch:
 
 jobs:
   osv-scan:
-    name: OSV Dependency Scan
+    name: OSV-Scanner (src directory)
     runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/google/osv-scanner:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create reports directory
-        run: mkdir -p reports
+      # ------------------------------------------------------------
+      # OSV-Scanner Supported Dependency Targets (auto-detected):
+      #
+      # Go        : go.mod, go.sum
+      # Node.js   : package.json, package-lock.json, yarn.lock, pnpm-lock.yaml
+      # Python    : requirements.txt, Pipfile, Pipfile.lock, poetry.lock
+      # Java/JVM  : pom.xml, build.gradle, build.gradle.kts
+      # .NET      : *.csproj, packages.config, packages.lock.json
+      # Ruby      : Gemfile, Gemfile.lock
+      # Rust      : Cargo.toml, Cargo.lock
+      # PHP       : composer.json, composer.lock
+      # Swift     : Package.swift, Package.resolved
+      # Dart      : pubspec.yaml, pubspec.lock
+      #
+      # Note:
+      # - OSV-Scanner scans dependency manifests only
+      # - No language runtime is required
+      # - Source code vulnerabilities are NOT scanned
+      # ------------------------------------------------------------
 
-      - name: Run OSV-Scanner (recursive, safe)
-        run: |
-          /osv-scanner scan \
-            -r ./src \
-            --format=json \
-            --output=reports/osv-report.json
+      - name: Run OSV-Scanner on src/
+        uses: google/osv-scanner-action@v1
+        with:
+          scan-path: ./src
+          recursive: true
+          format: json
+          output-file: osv-results.json
+          fail-on-vuln: true
 
-      - name: Upload OSV-Scanner Report
+      - name: Upload OSV-Scanner results
         uses: actions/upload-artifact@v4
         with:
-          name: osv-scanner-report
-          path: reports/osv-report.json
+          name: osv-scan-results
+          path: osv-results.json

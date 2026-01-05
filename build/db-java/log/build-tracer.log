@@ -1,0 +1,15 @@
+[T 03:01:06 7690] CodeQL CLI version 2.23.6
+[T 03:01:06 7690] Initializing tracer.
+[T 03:01:06 7690] Initializing tags.
+[T 03:01:06 7690] ID set to 0000000000001E0A_0000000000000001 (parent root)
+[T 03:01:06 7690] Initializing tracer.
+[T 03:01:06 7690] Initializing tags.
+[T 03:01:06 7690] ID set to 0000000000001E0A_0000000000000002 (parent root)
+[T 03:01:06 7690] Warning: SEMMLE_EXEC and SEMMLE_EXECP not set. Falling back to path lookup on argv[0].
+[T 03:01:06 7690] ==== Candidate to intercept: /opt/codeql/tools/linux64/runner-linux (canonical: /opt/codeql/tools/linux64/runner-linux) ====
+[T 03:01:06 7690] Lua: === Intercepted call to /opt/codeql/tools/linux64/runner-linux ===
+[T 03:01:06 7690] Executing the following tracer actions:
+[T 03:01:06 7690] Tracer actions:
+[T 03:01:06 7690] pre_invocations(0)
+[T 03:01:06 7690] post_invocations(0)
+[T 03:01:06 7690] trace_languages(1): [java]

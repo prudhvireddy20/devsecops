@@ -1,0 +1,3 @@
+/home/prudhvi/Documents/devsecops/build/CMakeFiles/vulnerable_c.dir
+/home/prudhvi/Documents/devsecops/build/CMakeFiles/edit_cache.dir
+/home/prudhvi/Documents/devsecops/build/CMakeFiles/rebuild_cache.dir

@@ -2,7 +2,7 @@
 import java.sql.*;
 import java.io.*;
 
-public class Vuln {
+public class vulnerable {
     public static void main(String[] args) throws Exception {
         String user = args[0];
 

@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/vulnerable_c.dir/src/vulnerable.c.o -o vulnerable_c 

@@ -1,0 +1,3 @@
+[2026-01-05 08:43:41] [javac-output-10692] warning: [options] location of system modules is not set in conjunction with -source 11
+[2026-01-05 08:43:41] [javac-output-10692]   not setting the location of system modules may lead to class files that cannot run on JDK 11
+[2026-01-05 08:43:41] [javac-output-10692]     --release 11 is recommended instead of -source 11 -target 11 because it sets the location of system modules automatically

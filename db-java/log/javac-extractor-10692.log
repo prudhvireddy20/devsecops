@@ -1,0 +1,18 @@
+[2026-01-05 08:43:40] [javac-extractor-10692] Starting extraction for:
+                                              sun.java.command=com.semmle.extractor.java.JavaExtractor --jdk-version 21 --javac-args @@@/home/prudhvi/Documents/devsecops/db-java/log/ext/javac.args
+                                              user.dir=/home/prudhvi/Documents/devsecops
+[2026-01-05 08:43:40] [javac-extractor-10692] Compilation name /home/prudhvi/Documents/devsecops/db-java/trap/java/diagnostics/diagnostic.trap.gz
+[2026-01-05 08:43:40] [javac-extractor-10692] [WARN] Appending source destination directory /home/prudhvi/Documents/devsecops/target/generated-sources/annotations to sourcepath
+[2026-01-05 08:43:42] [javac-extractor-10692] Annotation processor class 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor' initialized.
+[2026-01-05 08:43:42] [javac-extractor-10692] Annotation processor class 'lombok.launch.AnnotationProcessorHider$ClaimingProcessor' initialized.
+[2026-01-05 08:43:42] [javac-extractor-10692] 1 files will be passed to the attrib/flow phase
+[2026-01-05 08:43:42] [javac-extractor-10692] Processing file /home/prudhvi/Documents/devsecops/src/main/java/vulnerable.java
+[2026-01-05 08:43:45] [javac-extractor-10692] Processing module java.base
+[2026-01-05 08:43:45] [javac-extractor-10692] Processing module java.sql
+[2026-01-05 08:43:45] [javac-extractor-10692] Processing module java.xml
+[2026-01-05 08:43:45] [javac-extractor-10692] Processing module java.logging
+[2026-01-05 08:43:45] [javac-extractor-10692] Javac init time: 1.4s
+[2026-01-05 08:43:45] [javac-extractor-10692] Javac attr time: 0.0s
+[2026-01-05 08:43:45] [javac-extractor-10692] Extractor time: 2.8s
+[2026-01-05 08:43:45] [javac-extractor-10692] Other time: 0.3s
+[2026-01-05 08:43:45] [javac-extractor-10692] Total time: 4.5s

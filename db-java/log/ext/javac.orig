@@ -1,0 +1,15 @@
+-d
+/home/prudhvi/Documents/devsecops/target/classes
+-classpath
+/home/prudhvi/Documents/devsecops/target/classes:
+-sourcepath
+/home/prudhvi/Documents/devsecops/src/main/java:
+-s
+/home/prudhvi/Documents/devsecops/target/generated-sources/annotations
+-g
+-nowarn
+-target
+11
+-source
+11
+/home/prudhvi/Documents/devsecops/src/main/java/vulnerable.java

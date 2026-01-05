@@ -1,0 +1,41 @@
+title = "Custom Gitleaks Ruleset for DevSecOps Pipeline"
+
+#########################
+# Extend default rules
+#########################
+[extend]
+useDefault = true
+
+#########################
+# 🔴 Custom Rules
+#########################
+
+[[rules]]
+id = "hardcoded-password"
+description = "Hardcoded password assignment"
+regex = '''(?i)(password|passwd|pwd)\s*[:=]\s*["'][^"'\n]{6,}["']'''
+tags = ["password", "custom"]
+severity = "HIGH"
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key or token"
+regex = '''(?i)(api[_-]?key|token|secret)\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']'''
+tags = ["apikey", "token", "custom"]
+severity = "CRITICAL"
+
+#########################
+# 🟢 GLOBAL ALLOWLIST (CORRECT)
+#########################
+
+[allowlist]
+description = "Global allowlist to reduce noise"
+
+paths = [
+  '''.*test.*''',
+  '''.*mock.*'''
+]
+
+regexes = [
+  '''(?i)(example|dummy|test|changeme)'''
+]

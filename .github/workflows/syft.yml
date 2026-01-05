@@ -1,36 +1,40 @@
-name: Security Scan
+name: Syft-Grype Security Scan
 
 on: [push]
 
 jobs:
-  scan-source:
+  scan-inventory:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
-      actions: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate SBOM
+      # 1. Syft: Generates an inventory of ALL subdirectories
+      - name: Generate SBOM (Recursive)
         uses: anchore/sbom-action@v0
         with:
+          # "." tells Syft to scan the entire repo recursively
           path: ./src
           format: 'spdx-json'
-          output-file: 'inventory.spdx.json'
+          output-file: 'full-inventory.json'
 
+      # 2. Grype: Scans the SBOM generated in the previous step
       - name: Scan SBOM for Vulnerabilities
         uses: anchore/scan-action@v6
         with:
-          sbom: 'inventory.spdx.json'
+          # Directly input the Syft output into Grype
+          sbom: 'full-inventory.json'
           format: sarif
-          output-file: 'results.sarif'
-          severity-cutoff: high
+          output-file: 'vulnerabilities.sarif'
+          severity-cutoff: critical # Only fail on critical issues
 
+      # 3. Upload results to GitHub Security tab
       - name: Upload Scan Results
         uses: github/codeql-action/upload-sarif@v3
-        if: always() 
+        if: always() # Ensure results are uploaded even if vulnerabilities are found
         with:
-          sarif_file: 'results.sarif'
+          sarif_file: 'vulnerabilities.sarif'

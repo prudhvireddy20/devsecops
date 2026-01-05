@@ -1,6 +1,7 @@
 name: CodeQL SAST
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
@@ -23,32 +24,62 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔹 Initialize CodeQL with BOTH built-in + custom queries
+      # -------------------------
+      # CodeQL Init
+      # -------------------------
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-
-          # Built-in + custom queries
           queries: |
-            security-and-quality
+            codeql/security-and-quality
             ./security/codeql-queries
+          paths-ignore: |
+            build
+            target
+            .github
+            semgrep-rules
 
-          # Restrict analysis ONLY to src directory
-          paths: src
+      # -------------------------
+      # Manual build – JAVA
+      # -------------------------
+      - name: Build Java (Maven)
+        if: matrix.language == 'java'
+        run: |
+          mvn -B -DskipTests clean compile
 
-      # 🔹 Autobuild (required for Java / C / C++)
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      # -------------------------
+      # Manual build – C / C++
+      # -------------------------
+      - name: Build C/C++ (CMake)
+        if: matrix.language == 'cpp'
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make
 
-      # 🔹 Run analysis
+      # -------------------------
+      # Go build (optional but recommended)
+      # -------------------------
+      - name: Build Go
+        if: matrix.language == 'go'
+        run: |
+          go mod tidy
+          go build ./...
+
+      # -------------------------
+      # CodeQL Analyze
+      # -------------------------
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           output: codeql-results
           format: sarif
 
-      # 🔹 Upload SARIF for DefectDojo / MCP ingestion
+      # -------------------------
+      # Upload SARIF
+      # -------------------------
       - name: Upload CodeQL Report
         uses: actions/upload-artifact@v4
         with:

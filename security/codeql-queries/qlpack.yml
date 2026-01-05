@@ -1,0 +1,6 @@
+name: devsecops/custom-codeql
+version: 0.0.1
+dependencies:
+  codeql/java-all: "*"
+  codeql/javascript-all: "*"
+  codeql/python-all: "*"

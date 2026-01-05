@@ -1,40 +1,39 @@
-name: Syft-Grype Security Scan
+name: Full Security Scan
 
 on: [push]
 
 jobs:
-  scan-inventory:
+  scan-source:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      security-events: write
+      contents: read       # Required to read your code
+      security-events: write # Fixes "Resource not accessible" error
+      actions: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Syft: Generates an inventory of ALL subdirectories
-      - name: Generate SBOM (Recursive)
+      # 1. Generate SBOM scanning from the ROOT (.) to catch go.mod
+      - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          # "." tells Syft to scan the entire repo recursively
-          path: ./src
+          path: . 
           format: 'spdx-json'
-          output-file: 'full-inventory.json'
+          output-file: 'inventory.spdx.json'
 
-      # 2. Grype: Scans the SBOM generated in the previous step
+      # 2. Grype: Scans the SBOM for vulnerabilities
       - name: Scan SBOM for Vulnerabilities
         uses: anchore/scan-action@v6
         with:
-          # Directly input the Syft output into Grype
-          sbom: 'full-inventory.json'
+          sbom: 'inventory.spdx.json'
           format: sarif
-          output-file: 'vulnerabilities.sarif'
-          severity-cutoff: critical # Only fail on critical issues
+          output-file: 'results.sarif' # Explicitly naming this fixes the "Path does not exist" error
+          severity-cutoff: medium
 
-      # 3. Upload results to GitHub Security tab
+      # 3. Upload results to the Security tab
       - name: Upload Scan Results
         uses: github/codeql-action/upload-sarif@v3
-        if: always() # Ensure results are uploaded even if vulnerabilities are found
+        if: always() 
         with:
-          sarif_file: 'vulnerabilities.sarif'
+          sarif_file: 'results.sarif'

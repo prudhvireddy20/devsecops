@@ -27,7 +27,7 @@ jobs:
 
       - name: Run OSV-Scanner (recursive + fix)
         run: |
-          osv-scanner scan \
+          /osv-scanner scan \
             -r \
             --fix \
             --format=json \

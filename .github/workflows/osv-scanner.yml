@@ -1,52 +1,51 @@
-name: OSV Dependency Vulnerability Scan
+name: OSV-Scanner
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
   workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   osv-scan:
-    name: OSV-Scanner (src directory)
+    name: OSV Dependency Vulnerability Scan
     runs-on: ubuntu-latest
+
+    # Official OSV-Scanner container
+    container:
+      image: ghcr.io/google/osv-scanner:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ------------------------------------------------------------
-      # OSV-Scanner Supported Dependency Targets (auto-detected):
-      #
-      # Go        : go.mod, go.sum
-      # Node.js   : package.json, package-lock.json, yarn.lock, pnpm-lock.yaml
-      # Python    : requirements.txt, Pipfile, Pipfile.lock, poetry.lock
-      # Java/JVM  : pom.xml, build.gradle, build.gradle.kts
-      # .NET      : *.csproj, packages.config, packages.lock.json
-      # Ruby      : Gemfile, Gemfile.lock
-      # Rust      : Cargo.toml, Cargo.lock
-      # PHP       : composer.json, composer.lock
-      # Swift     : Package.swift, Package.resolved
-      # Dart      : pubspec.yaml, pubspec.lock
-      #
-      # Note:
-      # - OSV-Scanner scans dependency manifests only
-      # - No language runtime is required
-      # - Source code vulnerabilities are NOT scanned
-      # ------------------------------------------------------------
+      - name: Create report directory
+        run: mkdir -p reports
 
-      - name: Run OSV-Scanner on src/
-        uses: google/osv-scanner-action@v1
-        with:
-          scan-path: ./src
-          recursive: true
-          format: json
-          output-file: osv-results.json
-          fail-on-vuln: true
+      - name: Run OSV-Scanner (recursive dependency scan)
+        run: |
+          # OSV-Scanner supported targets include:
+          # - Node.js: package-lock.json, yarn.lock, pnpm-lock.yaml
+          # - Python: requirements.txt, Pipfile.lock, poetry.lock
+          # - Java/JVM: pom.xml, build.gradle, gradle.lockfile
+          # - Go: go.mod, go.sum
+          # - Rust: Cargo.lock
+          # - Ruby: Gemfile.lock
+          # - .NET: packages.lock.json, *.csproj
+          # - PHP: composer.lock
+          # - SBOMs: SPDX, CycloneDX
+          #
+          # The -r flag enables automatic recursive detection
+          /osv-scanner scan -r ./src \
+            --format json \
+            --output reports/osv-report.json
 
-      - name: Upload OSV-Scanner results
+      - name: Upload OSV-Scanner Report
         uses: actions/upload-artifact@v4
         with:
-          name: osv-scan-results
-          path: osv-results.json
+          name: osv-scanner-report
+          path: reports/osv-report.json

@@ -27,11 +27,7 @@ jobs:
 
       - name: Run OSV-Scanner (recursive scan)
         run: |
-          /osv-scanner scan \
-            -r \
-            --format=json \
-            --output=reports/osv-report.json \
-            ./src
+          /osv-scanner scan . --format json --output reports/osv-report.json --recursive
 
       - name: Upload OSV-Scanner Report
         uses: actions/upload-artifact@v4

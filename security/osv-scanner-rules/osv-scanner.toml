@@ -1,0 +1,4 @@
+[[IgnoredVulns]]
+id = "GO-2022-0968"
+reason = "This vulnerability is in a test-only dependency that isn't shipped to production."
+expiry = 2025-12-31  # Optional: Scanner will start reporting this again after this date

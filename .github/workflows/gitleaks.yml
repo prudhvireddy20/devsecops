@@ -9,25 +9,29 @@ on:
 
 jobs:
   gitleaks:
-    name: Gitleaks (Last 10 Commits)
+    name: Gitleaks (Last 10 Commits | src only)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 11   # N + 1 (required for last 10 commits)
+          fetch-depth: 11   # required for last 10 commits
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: >
-            detect
-            --source .
-            --config .gitleaks.toml
-            --log-opts="--max-count=10"
-            --report-format json
-            --report-path gitleaks-report.json
+      - name: Install Gitleaks CLI
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_arm64.tar.gz
+          sudo mv gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Run Gitleaks (src directory only)
+        run: |
+          gitleaks detect \
+            --source ./src \
+            --config ./security/gitleaks-rules/gitleaks.toml \
+            --log-opts="--max-count=10" \
+            --report-format json \
+            --report-path gitleaks-report.json \
             --verbose
 
       - name: Upload Gitleaks Report

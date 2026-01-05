@@ -29,7 +29,6 @@ jobs:
         run: |
           /osv-scanner scan \
             -r ./src \
-            --skip-errors \
             --format=json \
             --output=reports/osv-report.json
 

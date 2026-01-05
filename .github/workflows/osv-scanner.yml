@@ -1,0 +1,36 @@
+name: OSV-Scanner
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  osv-scan:
+    name: OSV Dependency Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run OSV-Scanner (recursive + fix)
+        uses: google/osv-scanner-action@v1
+        with:
+          scan-args: |
+            -r
+            --fix
+            --format=json
+            --output=reports/osv-report.json
+            ./src
+
+      - name: Upload OSV-Scanner Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scanner-report
+          path: reports/osv-report.json

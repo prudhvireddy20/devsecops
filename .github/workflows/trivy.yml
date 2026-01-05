@@ -1,0 +1,51 @@
+name: Trivy Security Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-scan:
+    name: Trivy Filesystem Scan
+    runs-on: ubuntu-latest
+
+    container:
+      image: aquasec/trivy:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run Trivy filesystem scan (src directory)
+        run: |
+          trivy fs src \
+            --scanners vuln,secret,config \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --format json \
+            --output reports/trivy-report.json \
+            --no-progress
+
+      - name: Run Trivy human-readable report
+        run: |
+          trivy fs src \
+            --scanners vuln,secret,config \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --format table \
+            --output reports/trivy-report.txt \
+            --no-progress
+
+      - name: Upload Trivy Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: reports/

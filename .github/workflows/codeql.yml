@@ -1,4 +1,4 @@
-name: CodeQL SAST
+name: CodeQL Baseline
 
 on:
   workflow_dispatch:
@@ -16,8 +16,8 @@ jobs:
 # JAVA
 # ==================================================
   codeql-java:
-    name: CodeQL Java
     runs-on: ubuntu-latest
+    name: CodeQL Java
 
     steps:
       - uses: actions/checkout@v4
@@ -25,28 +25,19 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: java
-          config-file: security/codeql-config.yml
 
       - name: Build Java
         run: mvn -B -DskipTests clean compile
 
       - uses: github/codeql-action/analyze@v3
-        with:
-          output: codeql-results/java
-          format: sarif
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: codeql-java
-          path: codeql-results/java/**/*.sarif
 
 
 # ==================================================
 # C / C++
 # ==================================================
   codeql-cpp:
-    name: CodeQL C/C++
     runs-on: ubuntu-latest
+    name: CodeQL C/C++
 
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +45,6 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          config-file: security/codeql-config.yml
 
       - name: Build C/C++
         run: |
@@ -64,22 +54,14 @@ jobs:
           make
 
       - uses: github/codeql-action/analyze@v3
-        with:
-          output: codeql-results/cpp
-          format: sarif
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: codeql-cpp
-          path: codeql-results/cpp/**/*.sarif
 
 
 # ==================================================
 # GO
 # ==================================================
   codeql-go:
-    name: CodeQL Go
     runs-on: ubuntu-latest
+    name: CodeQL Go
 
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +69,6 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: go
-          config-file: security/codeql-config.yml
 
       - name: Build Go
         run: |
@@ -95,22 +76,14 @@ jobs:
           go build ./...
 
       - uses: github/codeql-action/analyze@v3
-        with:
-          output: codeql-results/go
-          format: sarif
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: codeql-go
-          path: codeql-results/go/**/*.sarif
 
 
 # ==================================================
 # JAVASCRIPT
 # ==================================================
   codeql-js:
-    name: CodeQL JavaScript
     runs-on: ubuntu-latest
+    name: CodeQL JavaScript
 
     steps:
       - uses: actions/checkout@v4
@@ -118,25 +91,16 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: javascript
-          config-file: security/codeql-config.yml
 
       - uses: github/codeql-action/analyze@v3
-        with:
-          output: codeql-results/javascript
-          format: sarif
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: codeql-javascript
-          path: codeql-results/javascript/**/*.sarif
 
 
 # ==================================================
 # PYTHON
 # ==================================================
   codeql-python:
-    name: CodeQL Python
     runs-on: ubuntu-latest
+    name: CodeQL Python
 
     steps:
       - uses: actions/checkout@v4
@@ -144,14 +108,5 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: python
-          config-file: security/codeql-config.yml
 
       - uses: github/codeql-action/analyze@v3
-        with:
-          output: codeql-results/python
-          format: sarif
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: codeql-python
-          path: codeql-results/python/**/*.sarif

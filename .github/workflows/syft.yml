@@ -1,0 +1,38 @@
+name: Security Scan (Syft & Grype)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  scan-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. Generate SBOM using Syft
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          # This scans the local directory (src)
+          path: ./src 
+          format: 'spdx-json'
+          output-file: 'inventory.spdx.json'
+
+      # 2. Scan the SBOM using Grype
+      - name: Scan SBOM for Vulnerabilities
+        uses: anchore/scan-action@v6
+        with:
+          sbom: 'inventory.spdx.json'
+          fail-build: true
+          # severity-cutoff: high # Fails the build if High or Critical is found
+          output-format: sarif
+
+      # 3. Upload results to GitHub Security Tab
+      - name: Upload Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # Upload results even if vulnerabilities are found
+        with:
+          sarif_file: results.sarif

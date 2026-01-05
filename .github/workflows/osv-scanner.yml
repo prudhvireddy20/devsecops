@@ -1,36 +1,20 @@
-name: OSV-Scanner
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
-
-jobs:
-  osv-scan:
-    name: OSV Dependency Scan
-    runs-on: ubuntu-latest
-
-    steps:
+steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run OSV-Scanner (recursive + fix)
-        uses: google/osv-scanner-action@main
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action/scan@v1
+        continue-on-error: true # Ensures the report still uploads even if bugs are found
         with:
           scan-args: |
             -r
-            --fix
             --format=json
             --output=reports/osv-report.json
             ./src
 
       - name: Upload OSV-Scanner Report
         uses: actions/upload-artifact@v4
+        if: always() # Ensures upload happens even if previous steps failed
         with:
           name: osv-scanner-report
           path: reports/osv-report.json

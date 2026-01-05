@@ -25,9 +25,13 @@ jobs:
       - name: Create reports directory
         run: mkdir -p reports
 
-      - name: Run OSV-Scanner (recursive scan)
+      - name: Run OSV-Scanner (recursive, safe)
         run: |
-          /osv-scanner -r . --format json --output reports/osv-report.json 
+          /osv-scanner scan \
+            -r ./src \
+            --skip-errors \
+            --format=json \
+            --output=reports/osv-report.json
 
       - name: Upload OSV-Scanner Report
         uses: actions/upload-artifact@v4

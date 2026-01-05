@@ -1,41 +1,39 @@
-name: OSV-Scanner
+name: Full Security Scan
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
+on: [push]
 
 jobs:
-  osv-scan:
-    name: OSV Dependency Scan
+  scan-source:
     runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/google/osv-scanner:latest
+    permissions:
+      contents: read       # Required to read your code
+      security-events: write # Fixes "Resource not accessible" error
+      actions: read
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create reports directory
-        run: mkdir -p reports
-
-      - name: Run OSV-Scanner (recursive + fix)
-        run: |
-          osv-scanner scan \
-            -r \
-            --fix \
-            --format=json \
-            --output=reports/osv-report.json \
-            ./src
-
-      - name: Upload OSV-Scanner Report
-        uses: actions/upload-artifact@v4
+      # 1. Generate SBOM scanning from the ROOT (.) to catch go.mod
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
         with:
-          name: osv-scanner-report
-          path: reports/osv-report.json
+          path: . 
+          format: 'spdx-json'
+          output-file: 'inventory.spdx.json'
+
+      # 2. Grype: Scans the SBOM for vulnerabilities
+      - name: Scan SBOM for Vulnerabilities
+        uses: anchore/scan-action@v6
+        with:
+          sbom: 'inventory.spdx.json'
+          format: sarif
+          output-file: 'results.sarif' # Explicitly naming this fixes the "Path does not exist" error
+          severity-cutoff: medium
+
+      # 3. Upload results to the Security tab
+      - name: Upload Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() 
+        with:
+          sarif_file: 'results.sarif'

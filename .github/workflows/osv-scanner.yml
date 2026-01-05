@@ -25,11 +25,10 @@ jobs:
       - name: Create reports directory
         run: mkdir -p reports
 
-      - name: Run OSV-Scanner (recursive + fix)
+      - name: Run OSV-Scanner (recursive scan)
         run: |
           /osv-scanner scan \
             -r \
-            --fix \
             --format=json \
             --output=reports/osv-report.json \
             ./src

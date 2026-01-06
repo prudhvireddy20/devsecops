@@ -1,4 +1,4 @@
-name: OWASP Noir Scan
+name: OWASP Noir Endpoint Discovery
 
 on:
   workflow_dispatch:
@@ -9,14 +9,14 @@ on:
 
 permissions:
   contents: read
+  packages: read   # required for GHCR
 
 jobs:
   noir-scan:
-    name: OWASP Noir Endpoint Discovery
     runs-on: ubuntu-latest
 
     container:
-      image: owasp/noir:latest
+      image: ghcr.io/owasp-noir/noir:v0.26.0
 
     steps:
       - name: Checkout repository

@@ -1,0 +1,36 @@
+name: OWASP Noir Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  noir-scan:
+    name: OWASP Noir Endpoint Discovery
+    runs-on: ubuntu-latest
+
+    container:
+      image: owasp/noir:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run OWASP Noir scan
+        run: |
+          noir -b ./src/WebGoat -o json > reports/noir-report.json
+
+      - name: Upload Noir Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: noir-report
+          path: reports/noir-report.json

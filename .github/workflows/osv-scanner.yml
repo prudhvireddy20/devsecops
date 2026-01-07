@@ -40,7 +40,7 @@ jobs:
           # - SBOMs: SPDX, CycloneDX
           #
           # The -r flag enables automatic recursive detection
-          /osv-scanner scan -r ./src/WebGoat \
+          /osv-scanner scan -r ./src/juice-shop \
             --format json \
             --output reports/osv-report.json
 

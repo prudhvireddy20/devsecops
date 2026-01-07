@@ -1,39 +1,42 @@
-name: Full Security Scan
+name: Syft SBOM Generation 
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
-  scan-source:
+  sbom-scan:
     runs-on: ubuntu-latest
     permissions:
-      contents: read       # Required to read your code
-      security-events: write # Fixes "Resource not accessible" error
+      contents: read
+      security-events: write
       actions: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Generate SBOM scanning from the ROOT (.) to catch go.mod
+      - name: Build Java project
+        run: mvn -q -DskipTests package
+        working-directory: ./src/WebGoat
+
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          path: ./src/WebGoat 
-          format: 'spdx-json'
-          output-file: 'inventory.spdx.json'
+          path: ./src/juice-shop
+          format: spdx-json
+          output-file: inventory.spdx.json
 
-      # 2. Grype: Scans the SBOM for vulnerabilities
       - name: Scan SBOM for Vulnerabilities
         uses: anchore/scan-action@v6
         with:
-          sbom: 'inventory.spdx.json'
+          sbom: inventory.spdx.json
           format: sarif
-          output-file: 'results.sarif' # Explicitly naming this fixes the "Path does not exist" error
+          output-file: results.sarif
           severity-cutoff: medium
 
-      # 3. Upload results to the Security tab
       - name: Upload Scan Results
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
-        if: always() 
         with:
-          sarif_file: 'results.sarif'
+          sarif_file: results.sarif

@@ -1,4 +1,4 @@
-name: CodeQL Baseline
+name: CodeQL Scan
 
 on:
   workflow_dispatch:

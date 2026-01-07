@@ -1,4 +1,4 @@
-name: DevSecOps Pipeline
+name: Semgrep SAST Scan
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
 
       - name: Run Semgrep on src directory
         run: |
-          semgrep scan ./src/WebGoat \
+          semgrep scan ./src/juice-shop \
             --config security/semgrep-rules \
             --config auto \
             --config p/owasp-top-ten \

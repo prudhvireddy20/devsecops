@@ -27,7 +27,7 @@ jobs:
 
       - name: Run OWASP Noir scan
         run: |
-          noir -b ./src/WebGoat -f json | tee reports/noir-report.json
+          noir -b ./src/juice-shop -f json | tee reports/noir-report.json
 
       - name: Upload Noir Report
         uses: actions/upload-artifact@v4

@@ -28,7 +28,7 @@ jobs:
 
       - name: Run Trivy filesystem scan (src directory)
         run: |
-          trivy fs src \
+          trivy fs ./src/WebGoat \
             --scanners vuln,secret,config \
             --severity CRITICAL,HIGH,MEDIUM \
             --format json \

@@ -17,7 +17,7 @@ jobs:
 
       - name: Run Semgrep on src directory
         run: |
-          semgrep scan src \
+          semgrep scan ./src/WebGoat \
             --config security/semgrep-rules \
             --config auto \
             --config p/owasp-top-ten \

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centralized Security Scanning Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1.1em;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .upload-type-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .upload-type {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .upload-type:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-type.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-type input[type="radio"] {
+            display: none;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .scans-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .scan-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .scan-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .scan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .scan-id {
+            font-family: monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .scan-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .scan-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .scan-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .scan-status.running {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .result-item .count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .result-item .label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .scanner-config {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .scanner-config label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .scanner-config input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Security Scanning Platform</h1>
+            <p>Centralized security scanning for code, files, and containers</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('upload')">Upload & Scan</button>
+                <button class="tab" onclick="switchTab('scans')">Scan History</button>
+                <button class="tab" onclick="switchTab('results')">Results</button>
+            </div>
+
+            <!-- Upload Tab -->
+            <div id="upload" class="tab-content active">
+                <div class="upload-section">
+                    <h2>Upload Source for Scanning</h2>
+                    
+                    <div class="form-group">
+                        <label>Upload Type</label>
+                        <div class="upload-type-selector">
+                            <div class="upload-type active" onclick="selectUploadType('file')">
+                                <input type="radio" name="upload_type" value="file" checked>
+                                <div>📄 Single File</div>
+                            </div>
+                            <div class="upload-type" onclick="selectUploadType('zip')">
+                                <input type="radio" name="upload_type" value="zip">
+                                <div>📦 ZIP Archive</div>
+                            </div>
+                            <div class="upload-type" onclick="selectUploadType('repository')">
+                                <input type="radio" name="upload_type" value="repository">
+                                <div>🔗 Git Repository</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="file-upload" class="form-group">
+                        <label>Select File</label>
+                        <input type="file" id="file_input" accept=".py,.js,.java,.cpp,.c,.go,.cs,.ts,.tsx,.jsx,.json,.txt">
+                    </div>
+
+                    <div id="zip-upload" class="form-group" style="display: none;">
+                        <label>Select ZIP File</label>
+                        <input type="file" id="zip_input" accept=".zip">
+                    </div>
+
+                    <div id="repo-upload" class="form-group" style="display: none;">
+                        <label>Repository URL</label>
+                        <input type="text" id="repo_url" placeholder="https://github.com/user/repo.git">
+                        <label style="margin-top: 10px;">Branch (optional)</label>
+                        <input type="text" id="repo_branch" placeholder="main" value="main">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Scanner Configuration</label>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_semgrep" checked> Semgrep (SAST)</label>
+                        </div>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_codeql" checked> CodeQL (SAST)</label>
+                        </div>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_gitleaks" checked> Gitleaks (Secrets)</label>
+                        </div>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_osv" checked> OSV-Scanner (Dependencies)</label>
+                        </div>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_trivy" checked> Trivy (Container/FS)</label>
+                        </div>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_syft"> Syft (SBOM)</label>
+                        </div>
+                        <div class="scanner-config">
+                            <label><input type="checkbox" id="scanner_noir"> OWASP Noir</label>
+                        </div>
+                    </div>
+
+                    <div id="status" class="status"></div>
+
+                    <button onclick="uploadAndScan()" id="scan_button">
+                        🚀 Start Security Scan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scans Tab -->
+            <div id="scans" class="tab-content">
+                <h2>Scan History</h2>
+                <button onclick="loadScans()" style="margin-bottom: 20px;">🔄 Refresh</button>
+                <div id="scans_list" class="scans-list"></div>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="results" class="tab-content">
+                <h2>Scan Results</h2>
+                <div id="results_content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api/v1';
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'scans') {
+                loadScans();
+            }
+        }
+
+        function selectUploadType(type) {
+            document.querySelectorAll('.upload-type').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            event.currentTarget.querySelector('input').checked = true;
+
+            document.getElementById('file-upload').style.display = type === 'file' ? 'block' : 'none';
+            document.getElementById('zip-upload').style.display = type === 'zip' ? 'block' : 'none';
+            document.getElementById('repo-upload').style.display = type === 'repository' ? 'block' : 'none';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        async function uploadAndScan() {
+            const uploadType = document.querySelector('input[name="upload_type"]:checked').value;
+            const button = document.getElementById('scan_button');
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span>Uploading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('type', uploadType);
+
+                if (uploadType === 'file') {
+                    const file = document.getElementById('file_input').files[0];
+                    if (!file) {
+                        showStatus('Please select a file', 'error');
+                        button.disabled = false;
+                        button.innerHTML = '🚀 Start Security Scan';
+                        return;
+                    }
+                    formData.append('file', file);
+                } else if (uploadType === 'zip') {
+                    const file = document.getElementById('zip_input').files[0];
+                    if (!file) {
+                        showStatus('Please select a ZIP file', 'error');
+                        button.disabled = false;
+                        button.innerHTML = '🚀 Start Security Scan';
+                        return;
+                    }
+                    formData.append('file', file);
+                } else if (uploadType === 'repository') {
+                    const url = document.getElementById('repo_url').value;
+                    const branch = document.getElementById('repo_branch').value || 'main';
+                    if (!url) {
+                        showStatus('Please enter a repository URL', 'error');
+                        button.disabled = false;
+                        button.innerHTML = '🚀 Start Security Scan';
+                        return;
+                    }
+                    formData.append('repository_url', url);
+                    formData.append('branch', branch);
+                }
+
+                // Build scanner config
+                const config = {
+                    scanners: {
+                        semgrep: { enabled: document.getElementById('scanner_semgrep').checked },
+                        codeql: { enabled: document.getElementById('scanner_codeql').checked },
+                        gitleaks: { enabled: document.getElementById('scanner_gitleaks').checked },
+                        osv_scanner: { enabled: document.getElementById('scanner_osv').checked },
+                        trivy: { enabled: document.getElementById('scanner_trivy').checked },
+                        syft: { enabled: document.getElementById('scanner_syft').checked },
+                        noir: { enabled: document.getElementById('scanner_noir').checked }
+                    }
+                };
+                formData.append('config', JSON.stringify(config));
+
+                showStatus('Uploading...', 'info');
+
+                const response = await fetch(`${API_BASE}/scan/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+
+                showStatus(`Upload successful! Scan ID: ${data.scan_id}`, 'success');
+                button.innerHTML = '<span class="loading"></span>Executing scan...';
+
+                // Execute scan
+                const executeResponse = await fetch(`${API_BASE}/scan/${data.scan_id}/execute`, {
+                    method: 'POST'
+                });
+
+                const executeData = await executeResponse.json();
+
+                if (!executeResponse.ok) {
+                    throw new Error(executeData.error || 'Scan execution failed');
+                }
+
+                // Show detailed status
+                const statusMsg = executeData.results_generated 
+                    ? `Scan completed! Status: ${executeData.status}. Results generated: ${executeData.results_generated ? 'Yes' : 'No'}`
+                    : `Scan ${executeData.status}! Exit code: ${executeData.exit_code}`;
+                
+                if (executeData.status === 'completed') {
+                    showStatus(statusMsg, 'success');
+                } else if (executeData.results_generated) {
+                    showStatus(`Scan completed with warnings. Some scanners may have failed, but results were generated.`, 'info');
+                } else {
+                    showStatus(`Scan failed. Check logs: ${executeData.stderr?.substring(0, 200) || 'No error details'}`, 'error');
+                }
+                button.disabled = false;
+                button.innerHTML = '🚀 Start Security Scan';
+
+                // Switch to results tab
+                setTimeout(() => {
+                    switchTab('results');
+                    loadResults(data.scan_id);
+                }, 2000);
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                button.disabled = false;
+                button.innerHTML = '🚀 Start Security Scan';
+            }
+        }
+
+        async function loadScans() {
+            try {
+                const response = await fetch(`${API_BASE}/scans`);
+                const data = await response.json();
+
+                const scansList = document.getElementById('scans_list');
+                scansList.innerHTML = '';
+
+                if (!data.scans || data.scans.length === 0) {
+                    scansList.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">No scans found.</p>';
+                    return;
+                }
+
+                data.scans.forEach(scan => {
+                    const card = document.createElement('div');
+                    card.className = 'scan-card';
+                    
+                    // Determine status
+                    const status = scan.summary?.metadata?.status || 
+                                  (scan.result_count > 0 ? 'completed' : 'unknown');
+                    const statusClass = status === 'completed' ? 'completed' : 
+                                       status === 'failed' ? 'failed' : 'running';
+                    
+                    // Get scanner results from summary
+                    const scannerResults = Object.entries(scan.summary || {})
+                        .filter(([k]) => k !== 'metadata')
+                        .map(([scanner, data]) => ({
+                            scanner,
+                            findings: data.findings || 0,
+                            file: data.file || ''
+                        }));
+                    
+                    // Format scan ID for display
+                    const shortId = scan.scan_id.substring(0, 8) + '...';
+                    const timestamp = scan.summary?.metadata?.timestamp || 
+                                     scan.metadata?.timestamp || '';
+                    const formattedTime = timestamp ? new Date(timestamp).toLocaleString() : '';
+                    
+                    card.innerHTML = `
+                        <div class="scan-header">
+                            <div>
+                                <div class="scan-id" title="${scan.scan_id}">${shortId}</div>
+                                ${formattedTime ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">${formattedTime}</div>` : ''}
+                            </div>
+                            <div class="scan-status ${statusClass}">
+                                ${status}
+                            </div>
+                        </div>
+                        ${scan.result_count > 0 ? `
+                            <div style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                                <strong>Result Files:</strong> ${scan.result_count}
+                            </div>
+                        ` : ''}
+                        ${scannerResults.length > 0 ? `
+                            <div class="results-grid" style="margin-top: 15px;">
+                                ${scannerResults.map(({scanner, findings}) => `
+                                    <div class="result-item">
+                                        <div class="count">${findings}</div>
+                                        <div class="label">${scanner}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : scan.result_count > 0 ? `
+                            <div style="margin: 15px 0; padding: 10px; background: #fff3cd; border-radius: 6px; color: #856404;">
+                                Results generated but summary not available. Click "View Details" to see files.
+                            </div>
+                        ` : ''}
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button onclick="loadResults('${scan.scan_id}')" style="flex: 1;">
+                                View Details
+                            </button>
+                            ${scan.result_count > 0 ? `
+                                <button onclick="downloadAllResults('${scan.scan_id}')" style="flex: 1; background: #28a745;">
+                                    Download All
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    scansList.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading scans:', error);
+                document.getElementById('scans_list').innerHTML = 
+                    `<p style="padding: 20px; color: #721c24; background: #f8d7da; border-radius: 6px;">
+                        Error loading scans: ${error.message}
+                    </p>`;
+            }
+        }
+        
+        async function downloadAllResults(scanId) {
+            try {
+                const response = await fetch(`${API_BASE}/scan/${scanId}/results`);
+                const data = await response.json();
+                
+                if (data.results && Object.keys(data.results).length > 0) {
+                    // Download each result file
+                    Object.keys(data.results).forEach(filename => {
+                        const link = document.createElement('a');
+                        link.href = `${API_BASE}/scan/${scanId}/results/${filename}`;
+                        link.download = filename;
+                        link.click();
+                    });
+                } else {
+                    alert('No result files available for download');
+                }
+            } catch (error) {
+                alert(`Error downloading results: ${error.message}`);
+            }
+        }
+
+        async function loadResults(scanId) {
+            try {
+                const [resultsResponse, summaryResponse] = await Promise.all([
+                    fetch(`${API_BASE}/scan/${scanId}/results`).catch(() => ({ok: false})),
+                    fetch(`${API_BASE}/scan/${scanId}/summary`).catch(() => ({ok: false}))
+                ]);
+
+                const results = resultsResponse.ok ? await resultsResponse.json() : {results: {}};
+                const summary = summaryResponse.ok ? await summaryResponse.json() : {};
+
+                const content = document.getElementById('results_content');
+                
+                // Build scanner results display
+                const scannerResults = Object.entries(summary).filter(([k]) => k !== 'metadata');
+                const resultFiles = results.results || {};
+                
+                content.innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <h3>Scan ID: <code style="background: #f8f9fa; padding: 5px 10px; border-radius: 4px;">${scanId}</code></h3>
+                        ${summary.metadata?.timestamp ? `
+                            <p style="color: #666; margin-top: 5px;">
+                                Scanned: ${new Date(summary.metadata.timestamp).toLocaleString()}
+                            </p>
+                        ` : ''}
+                    </div>
+                    
+                    ${scannerResults.length > 0 ? `
+                        <h4>Scanner Results:</h4>
+                        <div class="results-grid" style="margin: 20px 0;">
+                            ${scannerResults.map(([scanner, data]) => `
+                                <div class="result-item">
+                                    <div class="count">${data.findings || 0}</div>
+                                    <div class="label">${scanner}</div>
+                                    ${data.file ? `<div style="font-size: 0.8em; color: #999; margin-top: 5px;">${data.file}</div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${Object.keys(resultFiles).length > 0 ? `
+                        <h4>Result Files:</h4>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                ${Object.entries(resultFiles).map(([file, info]) => `
+                                    <li style="padding: 10px; margin: 5px 0; background: white; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>
+                                            <strong>${file}</strong>
+                                            <span style="color: #666; margin-left: 10px;">${(info.size / 1024).toFixed(2)} KB</span>
+                                        </span>
+                                        <a href="${API_BASE}/scan/${scanId}/results/${file}" download 
+                                           style="background: #667eea; color: white; padding: 5px 15px; border-radius: 4px; text-decoration: none;">
+                                            Download
+                                        </a>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : `
+                        <div style="padding: 20px; background: #fff3cd; border-radius: 6px; color: #856404; margin: 20px 0;">
+                            No result files found for this scan.
+                        </div>
+                    `}
+                    
+                    ${summary.metadata ? `
+                        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 6px;">
+                            <h4>Metadata:</h4>
+                            <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(summary.metadata, null, 2)}</pre>
+                        </div>
+                    ` : ''}
+                `;
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('results_content').innerHTML = `
+                    <div style="padding: 20px; color: #721c24; background: #f8d7da; border-radius: 6px;">
+                        <h3>Error loading results</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load scans on page load
+        window.addEventListener('load', () => {
+            loadScans();
+        });
+    </script>
+</body>
+</html>

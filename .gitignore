@@ -1,2 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Scan results and uploads
+/tmp/scanner-results/
+/tmp/scan-uploads/
+/tmp/scan-storage/
+platform/api/uploads/
+platform/api/results/
+platform/api/storage/
+*.json
+*.sarif
+*.spdx.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# CodeQL databases
+codeql-db-*/
+*.dbinfo
+*.db-java/
+
+# Build artifacts
 build/
-CMakeCache.txt
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Environment variables
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp

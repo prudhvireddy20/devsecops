@@ -1,0 +1,83 @@
+name: Centralized Security Scan Dispatcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      scan_config:
+        description: 'JSON configuration for scan execution'
+        required: true
+        type: string
+  repository_dispatch:
+    types: [security-scan-request]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Dynamic Security Scan Execution
+    
+    # Enable Docker service for containerized scanners
+    services:
+      docker:
+        image: docker:24-dind
+        options: --privileged
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse scan configuration
+        id: config
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "${{ github.event.inputs.scan_config }}" > /tmp/scan-config.json
+          else
+            echo '${{ github.event.client_payload.scan_config }}' > /tmp/scan-config.json
+          fi
+          cat /tmp/scan-config.json
+
+      - name: Setup CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript # Placeholder, actual languages determined by dispatcher
+
+      - name: Setup dispatcher environment
+        run: |
+          mkdir -p /tmp/scanner-results
+          chmod +x platform/dispatcher/dispatcher.sh
+          # Install jq for JSON parsing and Docker CLI
+          sudo apt-get update && sudo apt-get install -y jq docker.io
+          # Start Docker daemon (for GitHub Actions)
+          sudo service docker start || true
+          # Wait for Docker to be ready
+          sudo docker info || true
+
+      - name: Execute security scan dispatcher
+        id: dispatch
+        run: |
+          platform/dispatcher/dispatcher.sh /tmp/scan-config.json
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results-${{ github.run_id }}
+          path: /tmp/scanner-results/
+          retention-days: 30
+
+      - name: Store results in object storage
+        if: always()
+        run: |
+          platform/storage/upload-results.sh /tmp/scanner-results/ ${{ github.run_id }}
+
+      - name: Generate scan summary
+        if: always()
+        run: |
+          platform/dispatcher/generate-summary.sh /tmp/scanner-results/ > /tmp/scan-summary.json
+          cat /tmp/scan-summary.json

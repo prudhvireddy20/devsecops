@@ -346,19 +346,4 @@ cd platform/dispatcher
 - **Workflow**: `.github/workflows/security-scan-dispatcher.yml`
 - **Dispatcher Script**: `platform/dispatcher/dispatcher.sh`
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🙏 Acknowledgments
-
-- Semgrep, CodeQL, Gitleaks, OSV-Scanner, Trivy, Syft, and OWASP Noir teams
-- GitHub Actions for CI/CD infrastructure

@@ -170,22 +170,22 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_syft == 'true'
     runs-on: ubuntu-latest
-    container:
-      image: anchore/syft:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate SBOM
-        run: |
-          syft dir:. -o json=$GITHUB_WORKSPACE/syft-sbom.json || true
-          echo "Syft SBOM generation completed"
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: json
+          output-file: syft-sbom.json
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
         with:
           name: syft-sbom-${{ env.JOB_ID }}
-          path: ${{ github.workspace }}/syft-sbom.json
+          path: syft-sbom.json
           if-no-files-found: warn
 
   owasp-noir:

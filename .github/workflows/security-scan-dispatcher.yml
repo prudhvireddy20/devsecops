@@ -46,30 +46,34 @@ jobs:
       - name: Detect scanners from payload
         id: detect
         run: |
-          SCANNERS='${{ toJson(github.event.client_payload.scanners) }}'
+          # Get scanners from payload or input
+          SCANNERS_RAW='${{ toJson(github.event.client_payload.scanners) }}'
           INPUT_SCANNERS='${{ github.event.inputs.scanners }}'
           
-          # Default scanners if none specified
-          if [ -z "$SCANNERS" ] || [ "$SCANNERS" = "null" ] || [ "$SCANNERS" = "[]" ]; then
+          # Compact JSON to single line and handle defaults
+          if [ "$SCANNERS_RAW" = "null" ] || [ -z "$SCANNERS_RAW" ] || [ "$SCANNERS_RAW" = "[]" ]; then
             if [ -n "$INPUT_SCANNERS" ]; then
               # Convert comma-separated to JSON array
-              SCANNERS=$(echo "$INPUT_SCANNERS" | jq -R 'split(",")')
+              SCANNERS=$(echo "$INPUT_SCANNERS" | jq -Rc 'split(",")')
             else
-              SCANNERS='["semgrep", "gitleaks", "trivy", "osv-scanner", "syft"]'
+              SCANNERS='["semgrep","gitleaks","trivy","osv-scanner","syft"]'
             fi
+          else
+            # Compact to single line
+            SCANNERS=$(echo "$SCANNERS_RAW" | jq -c '.')
           fi
           
           echo "scanners=$SCANNERS" >> $GITHUB_OUTPUT
           echo "Scanners to run: $SCANNERS"
           
-          # Set individual scanner flags
-          echo "has_semgrep=$(echo $SCANNERS | jq 'contains(["semgrep"])')" >> $GITHUB_OUTPUT
-          echo "has_gitleaks=$(echo $SCANNERS | jq 'contains(["gitleaks"])')" >> $GITHUB_OUTPUT
-          echo "has_trivy=$(echo $SCANNERS | jq 'contains(["trivy"])')" >> $GITHUB_OUTPUT
-          echo "has_osv=$(echo $SCANNERS | jq 'contains(["osv-scanner"])')" >> $GITHUB_OUTPUT
-          echo "has_syft=$(echo $SCANNERS | jq 'contains(["syft"])')" >> $GITHUB_OUTPUT
-          echo "has_codeql=$(echo $SCANNERS | jq 'contains(["codeql"])')" >> $GITHUB_OUTPUT
-          echo "has_noir=$(echo $SCANNERS | jq 'contains(["owasp-noir"]) or contains(["noir"])')" >> $GITHUB_OUTPUT
+          # Set individual scanner flags using compact JSON
+          echo "has_semgrep=$(echo "$SCANNERS" | jq -c 'contains(["semgrep"])')" >> $GITHUB_OUTPUT
+          echo "has_gitleaks=$(echo "$SCANNERS" | jq -c 'contains(["gitleaks"])')" >> $GITHUB_OUTPUT
+          echo "has_trivy=$(echo "$SCANNERS" | jq -c 'contains(["trivy"])')" >> $GITHUB_OUTPUT
+          echo "has_osv=$(echo "$SCANNERS" | jq -c 'contains(["osv-scanner"])')" >> $GITHUB_OUTPUT
+          echo "has_syft=$(echo "$SCANNERS" | jq -c 'contains(["syft"])')" >> $GITHUB_OUTPUT
+          echo "has_codeql=$(echo "$SCANNERS" | jq -c 'contains(["codeql"])')" >> $GITHUB_OUTPUT
+          echo "has_noir=$(echo "$SCANNERS" | jq -c 'contains(["owasp-noir"]) or contains(["noir"])')" >> $GITHUB_OUTPUT
 
   semgrep:
     name: Semgrep SAST

@@ -8,7 +8,8 @@ env/
 venv/
 ENV/
 .venv
-
+./juice-shop
+/WebGoat
 # Scan results and uploads
 /tmp/scanner-results/
 /tmp/scan-uploads/

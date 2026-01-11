@@ -21,9 +21,8 @@ on:
         required: false
         default: 'main'
       scanners:
-        description: 'Comma-separated list of scanners'
-        required: false
-        default: 'semgrep,gitleaks,trivy,osv-scanner,syft,codeql,owasp-noir'
+        description: 'Comma-separated list of scanners (required)'
+        required: true
 
 env:
   JOB_ID: ${{ github.event.client_payload.job_id || github.event.inputs.job_id || github.run_id }}
@@ -56,7 +55,6 @@ jobs:
           fi
 
       - name: Clone target repository
-        id: clone
         run: |
           echo "Cloning ${{ env.REPO_URL }} (branch: ${{ env.BRANCH }})"
           git clone --branch ${{ env.BRANCH }} --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }}
@@ -69,12 +67,13 @@ jobs:
           SCANNERS_RAW='${{ toJson(github.event.client_payload.scanners) }}'
           INPUT_SCANNERS='${{ github.event.inputs.scanners }}'
           
-          # Default: ALL scanners enabled
+          # No default list - user must specify scanners
           if [ "$SCANNERS_RAW" = "null" ] || [ -z "$SCANNERS_RAW" ] || [ "$SCANNERS_RAW" = "[]" ]; then
             if [ -n "$INPUT_SCANNERS" ]; then
               SCANNERS=$(echo "$INPUT_SCANNERS" | jq -Rc 'split(",")')
             else
-              SCANNERS='["semgrep","gitleaks","trivy","osv-scanner","syft","codeql","owasp-noir"]'
+              echo "ERROR: No scanners specified!"
+              SCANNERS='[]'
             fi
           else
             SCANNERS=$(echo "$SCANNERS_RAW" | jq -c '.')
@@ -116,6 +115,7 @@ jobs:
           cd ./target
           semgrep scan --config auto --json --output ../semgrep-results.json . || echo '{"results":[],"errors":[]}' > ../semgrep-results.json
           echo "Semgrep scan completed"
+          cat ../semgrep-results.json | head -30
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -137,16 +137,13 @@ jobs:
 
       - name: Install and Run Gitleaks
         run: |
-          # Download gitleaks
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar xz
-          # Run gitleaks - create empty JSON if no leaks found
           ./gitleaks detect --source=./target --report-path=gitleaks-results.json --report-format=json --no-git --exit-code 0 || echo '[]' > gitleaks-results.json
-          # Ensure file exists and has content
           if [ ! -s gitleaks-results.json ]; then
             echo '[]' > gitleaks-results.json
           fi
           echo "Gitleaks scan completed"
-          cat gitleaks-results.json | head -20
+          cat gitleaks-results.json | head -30
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -180,6 +177,7 @@ jobs:
           if [ ! -s trivy-results.json ]; then
             echo '{"Results":[]}' > trivy-results.json
           fi
+          cat trivy-results.json | head -30
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -201,17 +199,14 @@ jobs:
 
       - name: Install and Run OSV-Scanner
         run: |
-          # Download osv-scanner binary
           curl -sSL https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64 -o osv-scanner
           chmod +x osv-scanner
-          # Run scanner
           ./osv-scanner --json -r ./target > osv-results.json 2>&1 || true
-          # Ensure file exists
           if [ ! -s osv-results.json ]; then
             echo '{"results":[]}' > osv-results.json
           fi
           echo "OSV-Scanner completed"
-          cat osv-results.json | head -20
+          cat osv-results.json | head -30
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -249,6 +244,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_noir == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/owasp-noir/noir:main
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -256,18 +253,14 @@ jobs:
           name: target-repo-${{ env.JOB_ID }}
           path: ./target
 
-      - name: Install and Run Noir
+      - name: Run Noir
         run: |
-          # Install Noir
-          curl -sSL https://raw.githubusercontent.com/owasp-noir/noir/main/install.sh | bash || true
-          # Run Noir
-          if [ -f ~/.noir/bin/noir ]; then
-            ~/.noir/bin/noir -b ./target -o noir-results.json --format json || echo '{"endpoints":[]}' > noir-results.json
-          else
-            echo "Noir installation failed, creating empty result"
-            echo '{"endpoints":[]}' > noir-results.json
+          noir -b ./target -o noir-results.json --format json || true
+          if [ ! -s noir-results.json ]; then
+            echo '{"endpoints":[],"url":"","method":""}' > noir-results.json
           fi
           echo "OWASP Noir scan completed"
+          cat noir-results.json | head -50
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -284,16 +277,15 @@ jobs:
       security-events: write
       contents: read
     steps:
-      - name: Download target repo
+      - name: Download target repo to workspace
         uses: actions/download-artifact@v4
         with:
           name: target-repo-${{ env.JOB_ID }}
-          path: ./target
+          path: ${{ github.workspace }}
 
       - name: Detect Languages
         id: detect-languages
         run: |
-          cd ./target
           LANGS=""
           if find . -name "*.py" -type f | head -1 | grep -q .; then LANGS="$LANGS,python"; fi
           if find . \( -name "*.js" -o -name "*.ts" \) -type f | head -1 | grep -q .; then LANGS="$LANGS,javascript"; fi
@@ -304,14 +296,6 @@ jobs:
           if [ -z "$LANGS" ]; then LANGS="javascript"; fi
           echo "languages=$LANGS" >> $GITHUB_OUTPUT
           echo "Detected languages: $LANGS"
-
-      - name: Checkout for CodeQL (required)
-        uses: actions/checkout@v4
-
-      - name: Copy target to workspace
-        run: |
-          rm -rf ./* 2>/dev/null || true
-          cp -r ./target/* . 2>/dev/null || cp -r target/* .
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -324,6 +308,7 @@ jobs:
         continue-on-error: true
 
       - name: Perform CodeQL Analysis
+        id: analyze
         uses: github/codeql-action/analyze@v3
         with:
           output: codeql-results
@@ -333,8 +318,10 @@ jobs:
         run: |
           mkdir -p codeql-results
           if [ ! "$(ls -A codeql-results 2>/dev/null)" ]; then
-            echo '{"runs":[]}' > codeql-results/results.json
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"CodeQL"}},"results":[]}]}' > codeql-results/results.sarif
           fi
+          echo "CodeQL results:"
+          ls -la codeql-results/
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -363,7 +350,8 @@ jobs:
           echo ""
           find ./all-results -type f \( -name "*.json" -o -name "*.sarif" \) | while read f; do
             echo "=== $(basename $f) ==="
-            head -50 "$f" 2>/dev/null || echo "(empty or binary)"
+            wc -l "$f"
+            head -30 "$f" 2>/dev/null || echo "(empty or binary)"
             echo ""
           done
 

@@ -1,7 +1,7 @@
 # Centralized Security Scanner Workflow
 # Runs on GitHub-hosted runners with container-based scanners
 # Triggered via repository_dispatch from the DevSecOps Platform
-# Scans the TARGET repository provided by the user
+# Supports both Git repos (repo_url) and ZIP files (source_url)
 
 name: Centralized Security Scan
 
@@ -14,8 +14,11 @@ on:
         description: 'Scan Job ID'
         required: true
       repo_url:
-        description: 'Repository URL to scan (required)'
-        required: true
+        description: 'Repository URL to scan'
+        required: false
+      source_url:
+        description: 'ZIP file download URL'
+        required: false
       branch:
         description: 'Branch to scan'
         required: false
@@ -26,7 +29,8 @@ on:
 
 env:
   JOB_ID: ${{ github.event.client_payload.job_id || github.event.inputs.job_id || github.run_id }}
-  REPO_URL: ${{ github.event.client_payload.repo_url || github.event.inputs.repo_url }}
+  REPO_URL: ${{ github.event.client_payload.repo_url || github.event.inputs.repo_url || '' }}
+  SOURCE_URL: ${{ github.event.client_payload.source_url || github.event.inputs.source_url || '' }}
   BRANCH: ${{ github.event.client_payload.branch || github.event.inputs.branch || 'main' }}
   TARGET_DIR: /tmp/target-repo
 
@@ -47,18 +51,42 @@ jobs:
       - name: Validate inputs
         run: |
           echo "Job ID: ${{ env.JOB_ID }}"
-          echo "Target Repo URL: ${{ env.REPO_URL }}"
+          echo "Repo URL: ${{ env.REPO_URL }}"
+          echo "Source URL: ${{ env.SOURCE_URL }}"
           echo "Branch: ${{ env.BRANCH }}"
-          if [ -z "${{ env.REPO_URL }}" ]; then
-            echo "ERROR: No repository URL provided!"
+          if [ -z "${{ env.REPO_URL }}" ] && [ -z "${{ env.SOURCE_URL }}" ]; then
+            echo "ERROR: Either repo_url or source_url must be provided!"
             exit 1
           fi
 
-      - name: Clone target repository
+      - name: Get source code
         run: |
-          echo "Cloning ${{ env.REPO_URL }} (branch: ${{ env.BRANCH }})"
-          git clone --branch ${{ env.BRANCH }} --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }}
-          echo "Repository cloned successfully"
+          mkdir -p ${{ env.TARGET_DIR }}
+          
+          if [ -n "${{ env.SOURCE_URL }}" ]; then
+            # Download and extract ZIP file
+            echo "Downloading source from: ${{ env.SOURCE_URL }}"
+            curl -L -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                 -o /tmp/source.zip "${{ env.SOURCE_URL }}"
+            unzip -q /tmp/source.zip -d ${{ env.TARGET_DIR }}
+            # If ZIP extracted into a single directory, move contents up
+            if [ $(ls -1 ${{ env.TARGET_DIR }} | wc -l) -eq 1 ]; then
+              INNER_DIR=$(ls -1 ${{ env.TARGET_DIR }})
+              if [ -d "${{ env.TARGET_DIR }}/$INNER_DIR" ]; then
+                mv ${{ env.TARGET_DIR }}/$INNER_DIR/* ${{ env.TARGET_DIR }}/ 2>/dev/null || true
+                mv ${{ env.TARGET_DIR }}/$INNER_DIR/.* ${{ env.TARGET_DIR }}/ 2>/dev/null || true
+                rmdir "${{ env.TARGET_DIR }}/$INNER_DIR" 2>/dev/null || true
+              fi
+            fi
+            echo "Source extracted from ZIP"
+          elif [ -n "${{ env.REPO_URL }}" ]; then
+            # Clone git repository
+            echo "Cloning ${{ env.REPO_URL }} (branch: ${{ env.BRANCH }})"
+            git clone --branch ${{ env.BRANCH }} --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }}
+            echo "Repository cloned"
+          fi
+          
+          echo "Source contents:"
           ls -la ${{ env.TARGET_DIR }}
 
       - name: Detect scanners from payload
@@ -67,7 +95,6 @@ jobs:
           SCANNERS_RAW='${{ toJson(github.event.client_payload.scanners) }}'
           INPUT_SCANNERS='${{ github.event.inputs.scanners }}'
           
-          # No default list - user must specify scanners
           if [ "$SCANNERS_RAW" = "null" ] || [ -z "$SCANNERS_RAW" ] || [ "$SCANNERS_RAW" = "[]" ]; then
             if [ -n "$INPUT_SCANNERS" ]; then
               SCANNERS=$(echo "$INPUT_SCANNERS" | jq -Rc 'split(",")')
@@ -308,7 +335,6 @@ jobs:
         continue-on-error: true
 
       - name: Perform CodeQL Analysis
-        id: analyze
         uses: github/codeql-action/analyze@v3
         with:
           output: codeql-results
@@ -345,8 +371,7 @@ jobs:
       - name: List all results
         run: |
           echo "=== Scan Results for Job: ${{ env.JOB_ID }} ==="
-          echo "Target Repository: ${{ env.REPO_URL }}"
-          echo "Branch: ${{ env.BRANCH }}"
+          echo "Source: ${{ env.REPO_URL || env.SOURCE_URL }}"
           echo ""
           find ./all-results -type f \( -name "*.json" -o -name "*.sarif" \) | while read f; do
             echo "=== $(basename $f) ==="
@@ -360,8 +385,11 @@ jobs:
           echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Job ID:** ${{ env.JOB_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Target Repository:** ${{ env.REPO_URL }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ env.BRANCH }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ env.REPO_URL }}" ]; then
+            echo "**Repository:** ${{ env.REPO_URL }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Source:** ZIP Upload" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
           for dir in ./all-results/*/; do

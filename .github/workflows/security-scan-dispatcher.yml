@@ -80,10 +80,24 @@ jobs:
             fi
             echo "Source extracted from ZIP"
           elif [ -n "${{ env.REPO_URL }}" ]; then
-            # Clone git repository
-            echo "Cloning ${{ env.REPO_URL }} (branch: ${{ env.BRANCH }})"
-            git clone --branch ${{ env.BRANCH }} --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }}
-            echo "Repository cloned"
+            # Clone git repository - try specified branch, fallback to main/master
+            BRANCH="${{ env.BRANCH }}"
+            echo "Attempting to clone ${{ env.REPO_URL }}"
+            
+            # Try specified branch first
+            if git clone --branch "$BRANCH" --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }} 2>/dev/null; then
+              echo "Cloned with branch: $BRANCH"
+            # Try 'main' if specified branch fails
+            elif git clone --branch main --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }} 2>/dev/null; then
+              echo "Cloned with branch: main"
+            # Try 'master' if main fails
+            elif git clone --branch master --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }} 2>/dev/null; then
+              echo "Cloned with branch: master"
+            # Clone default branch
+            else
+              git clone --depth 1 ${{ env.REPO_URL }} ${{ env.TARGET_DIR }}
+              echo "Cloned default branch"
+            fi
           fi
           
           echo "Source contents:"

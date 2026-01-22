@@ -143,6 +143,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_semgrep == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -150,9 +152,8 @@ jobs:
           name: target-repo-${{ env.JOB_ID }}
           path: ./target
 
-      - name: Install and Run Semgrep
+      - name: Run Semgrep
         run: |
-          pip install semgrep
           cd ./target
           semgrep scan --config auto --json --output ../semgrep-results.json . || echo '{"results":[],"errors":[]}' > ../semgrep-results.json
           echo "Semgrep scan completed"
@@ -169,6 +170,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_gitleaks == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: zricethezav/gitleaks:latest
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -176,10 +179,9 @@ jobs:
           name: target-repo-${{ env.JOB_ID }}
           path: ./target
 
-      - name: Install and Run Gitleaks
+      - name: Run Gitleaks
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar xz
-          ./gitleaks detect --source=./target --report-path=gitleaks-results.json --report-format=json --no-git --exit-code 0 || echo '[]' > gitleaks-results.json
+          gitleaks detect --source=./target --report-path=gitleaks-results.json --report-format=json --no-git --exit-code 0 || echo '[]' > gitleaks-results.json
           if [ ! -s gitleaks-results.json ]; then
             echo '[]' > gitleaks-results.json
           fi
@@ -197,6 +199,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_trivy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: aquasec/trivy:latest
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -205,16 +209,8 @@ jobs:
           path: ./target
 
       - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: './target'
-          format: 'json'
-          output: 'trivy-results.json'
-        continue-on-error: true
-
-      - name: Ensure output exists
         run: |
+          trivy fs --format json --output trivy-results.json ./target || true
           if [ ! -s trivy-results.json ]; then
             echo '{"Results":[]}' > trivy-results.json
           fi
@@ -231,6 +227,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_osv == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/google/osv-scanner:latest
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -238,11 +236,9 @@ jobs:
           name: target-repo-${{ env.JOB_ID }}
           path: ./target
 
-      - name: Install and Run OSV-Scanner
+      - name: Run OSV-Scanner
         run: |
-          curl -sSL https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64 -o osv-scanner
-          chmod +x osv-scanner
-          ./osv-scanner --json -r ./target > osv-results.json 2>&1 || true
+          /osv-scanner --json -r ./target > osv-results.json 2>&1 || true
           if [ ! -s osv-results.json ]; then
             echo '{"results":[]}' > osv-results.json
           fi
@@ -260,6 +256,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_syft == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: anchore/syft:latest
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -268,11 +266,12 @@ jobs:
           path: ./target
 
       - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0
-        with:
-          path: ./target
-          format: json
-          output-file: syft-sbom.json
+        run: |
+          syft ./target -o json > syft-sbom.json || true
+          if [ ! -s syft-sbom.json ]; then
+            echo '{"artifacts":[]}' > syft-sbom.json
+          fi
+          echo "Syft SBOM generated"
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -286,7 +285,7 @@ jobs:
     if: needs.setup.outputs.has_noir == 'true'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/owasp-noir/noir:main
+      image: ghcr.io/owasp-noir/noir:latest
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4

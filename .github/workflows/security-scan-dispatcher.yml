@@ -256,8 +256,8 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has_syft == 'true'
     runs-on: ubuntu-latest
-    container:
-      image: anchore/syft:latest
+    # Note: anchore/syft is a minimal image without shell utilities like 'tail'
+    # Run Docker directly on runner instead of using container directive
     steps:
       - name: Download target repo
         uses: actions/download-artifact@v4
@@ -267,11 +267,12 @@ jobs:
 
       - name: Generate SBOM with Syft
         run: |
-          syft ./target -o json > syft-sbom.json || true
+          docker run --rm -v "$PWD/target:/src" anchore/syft:latest /src -o json > syft-sbom.json || true
           if [ ! -s syft-sbom.json ]; then
             echo '{"artifacts":[]}' > syft-sbom.json
           fi
           echo "Syft SBOM generated"
+          cat syft-sbom.json | head -30
 
       - name: Upload Results
         uses: actions/upload-artifact@v4

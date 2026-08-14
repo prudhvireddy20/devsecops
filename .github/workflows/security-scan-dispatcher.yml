@@ -267,7 +267,9 @@ jobs:
 
       - name: Generate SBOM with Syft
         run: |
-          docker run --rm -v "$PWD/target:/src" anchore/syft:latest /src -o json > syft-sbom.json || true
+          docker run --rm \
+            -e SYFT_PYTHON_GUESS_UNPINNED_REQUIREMENTS=true \
+            -v "$PWD/target:/src" anchore/syft:latest /src -o json > syft-sbom.json || true
           if [ ! -s syft-sbom.json ]; then
             echo '{"artifacts":[]}' > syft-sbom.json
           fi
